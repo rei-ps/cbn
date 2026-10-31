@@ -9,8 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet" />
     <!-- PapaParse -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js">
-    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
         /* ---------- RESET & BASE ---------- */
         * {
@@ -148,7 +147,7 @@
             color: #2b3a67;
         }
 
-        /* ---------- MAIN APP (same as before, but wrapped) ---------- */
+        /* ---------- MAIN APP ---------- */
         .app-wrapper {
             width: 100%;
             max-width: 1400px;
@@ -263,7 +262,7 @@
         }
         .multi-select-group {
             position: relative;
-            min-width: 240px;
+            min-width: 220px;
             flex: 1 1 auto;
         }
         .multi-select-group label {
@@ -590,6 +589,7 @@
 
             <!-- Compact multi-select checklist -->
             <div class="filter-panel">
+                <!-- MEMBERS FILTER -->
                 <div class="multi-select-group" id="multiSelectGroup">
                     <label>👥 Members</label>
                     <div class="multi-select-trigger" id="multiSelectTrigger">
@@ -604,6 +604,23 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- DAY FILTER (COLUMNS) -->
+                <div class="multi-select-group" id="daySelectGroup">
+                    <label>📆 Days (Columns)</label>
+                    <div class="multi-select-trigger" id="daySelectTrigger">
+                        <span class="trigger-text" id="selectedDaysPreview">All days</span>
+                        <span class="trigger-arrow">▼</span>
+                    </div>
+                    <div class="multi-select-dropdown" id="daySelectDropdown">
+                        <div id="dayChecklistContainer"></div>
+                        <div class="dropdown-actions">
+                            <button id="selectAllDaysBtn">✓ Select all</button>
+                            <button id="clearAllDaysBtn">✗ Clear</button>
+                        </div>
+                    </div>
+                </div>
+
                 <button class="btn-reset" id="resetFilters">↻ Clear filters &amp; selections</button>
             </div>
 
@@ -626,13 +643,12 @@
             // ============================================================
             //  PASSWORD LOGIC
             // ============================================================
-            const CORRECT_PASSWORD = 'natsuiro7216'; // <-- change this to your desired password
+            const CORRECT_PASSWORD = 'natsuiro7216'; 
             const overlay = document.getElementById('passwordOverlay');
             const passwordInput = document.getElementById('passwordInput');
             const unlockBtn = document.getElementById('unlockBtn');
             const passwordError = document.getElementById('passwordError');
 
-            // Check session storage for existing auth
             function checkSession() {
                 if (sessionStorage.getItem('calabrion_auth') === 'true') {
                     overlay.classList.add('hidden');
@@ -641,7 +657,6 @@
                 return false;
             }
 
-            // Attempt unlock
             function attemptUnlock() {
                 const entered = passwordInput.value.trim();
                 if (entered === CORRECT_PASSWORD) {
@@ -649,7 +664,6 @@
                     overlay.classList.add('hidden');
                     passwordError.textContent = '';
                     passwordInput.value = '';
-                    // Focus the first interactive element behind overlay (optional)
                 } else {
                     passwordError.textContent = '❌ Incorrect password. Try again.';
                     passwordInput.value = '';
@@ -657,7 +671,6 @@
                 }
             }
 
-            // Event listeners
             unlockBtn.addEventListener('click', attemptUnlock);
             passwordInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
@@ -666,19 +679,13 @@
                 }
             });
 
-            // Auto-focus the input
             setTimeout(() => passwordInput.focus(), 300);
-
-            // If session already active, hide overlay immediately
-            if (checkSession()) {
-                // Already hidden
-            }
+            checkSession();
 
             // ============================================================
-            //  EXISTING APP LOGIC (unchanged, but wrapped in the same IIFE)
+            //  APP LOGIC
             // ============================================================
 
-            // ---------- CONFIGURATION ----------
             const monthConfig = [
                 { label: "Nov 2026", url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSVVITCbL1Y9pdu1m1S0hC31EDjFy1vkLLgiiBXVgEeEJOlxk93M8KaT0dAu0oChiBExMgnJ2CLrIXI/pub?gid=461378009&single=true&output=csv" },
                 { label: "Oct 2026", url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSVVITCbL1Y9pdu1m1S0hC31EDjFy1vkLLgiiBXVgEeEJOlxk93M8KaT0dAu0oChiBExMgnJ2CLrIXI/pub?gid=1330899179&single=true&output=csv" },
@@ -687,9 +694,7 @@
                 { label: "July 2026", url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSVVITCbL1Y9pdu1m1S0hC31EDjFy1vkLLgiiBXVgEeEJOlxk93M8KaT0dAu0oChiBExMgnJ2CLrIXI/pub?gid=2070281782&single=true&output=csv" },
                 { label: "June 2026", url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSVVITCbL1Y9pdu1m1S0hC31EDjFy1vkLLgiiBXVgEeEJOlxk93M8KaT0dAu0oChiBExMgnJ2CLrIXI/pub?gid=1779576104&single=true&output=csv" },
             ];
-            // -----------------------------------
 
-            // DOM elements
             const monthSelect = document.getElementById('monthSelect');
             const tbody = document.getElementById('tableBody');
             const theadRow = document.getElementById('tableHeader');
@@ -697,7 +702,7 @@
             const refreshLink = document.getElementById('refreshLink');
             const resetBtn = document.getElementById('resetFilters');
 
-            // Multi-select elements
+            // Member Filter Elements
             const multiSelectTrigger = document.getElementById('multiSelectTrigger');
             const dropdown = document.getElementById('multiSelectDropdown');
             const checklistContainer = document.getElementById('checklistContainer');
@@ -705,17 +710,28 @@
             const clearAllBtn = document.getElementById('clearAllBtn');
             const selectedNamesPreview = document.getElementById('selectedNamesPreview');
 
-            // State
+            // Day Filter Elements
+            const daySelectTrigger = document.getElementById('daySelectTrigger');
+            const daySelectDropdown = document.getElementById('daySelectDropdown');
+            const dayChecklistContainer = document.getElementById('dayChecklistContainer');
+            const selectAllDaysBtn = document.getElementById('selectAllDaysBtn');
+            const clearAllDaysBtn = document.getElementById('clearAllDaysBtn');
+            const selectedDaysPreview = document.getElementById('selectedDaysPreview');
+
             let allRows = [];
             let headers = [];
             let filteredRows = [];
             let currentCsvUrl = '';
+            
+            // Member state
             let nameColumns = [];
             let uniqueNames = [];
             let selectedNamesSet = new Set();
-            let currentMonthData = { rows: [], headers: [] };
 
-            // Helper: escapeHtml
+            // Day state
+            let dayHeadersList = [];
+            let selectedDaysSet = new Set();
+
             function escapeHtml(str) {
                 if (!str) return '';
                 return str.replace(/[&<>]/g, function(m) {
@@ -726,30 +742,30 @@
                 });
             }
 
-            // Detect name columns (case-insensitive)
             function detectNameColumns(headersList) {
-                const candidates = headersList.filter(h =>
-                    /name|nama|staff|anggota|member|person|team|shift member/i.test(h)
-                );
+                const candidates = headersList.filter(h => /name|nama|staff|anggota|member|person|team|shift member/i.test(h));
                 if (candidates.length) return candidates;
                 return headersList.length ? [headersList[0]] : [];
             }
 
-            // Extract unique names from rows using nameColumns
+            // Detect columns that look like dates (e.g., "01/Sun", "02/Mon")
+            function detectDayHeaders(headersList) {
+                const firstCol = headersList[0];
+                // Every column except the first one (usually Name) is considered a day column in this layout
+                return headersList.filter(h => h !== firstCol);
+            }
+
             function extractUniqueNames(rows, columns) {
                 const set = new Set();
                 rows.forEach(row => {
                     columns.forEach(col => {
                         const val = row[col];
-                        if (val && val.toString().trim() !== '') {
-                            set.add(val.toString().trim());
-                        }
+                        if (val && val.toString().trim() !== '') set.add(val.toString().trim());
                     });
                 });
                 return Array.from(set).sort((a, b) => a.localeCompare(b));
             }
 
-            // Render checklist UI
             function renderChecklist() {
                 if (!uniqueNames.length) {
                     checklistContainer.innerHTML = '<div class="check-item" style="justify-content:center;">No members found</div>';
@@ -759,17 +775,14 @@
                 uniqueNames.forEach(name => {
                     const checked = selectedNamesSet.has(name) ? 'checked' : '';
                     const id = 'chk_' + escapeHtml(name).replace(/\s/g, '_');
-                    html += `
-                            <div class="check-item" data-name="${escapeHtml(name)}">
+                    html += `<div class="check-item" data-name="${escapeHtml(name)}">
                                 <input type="checkbox" id="${id}" ${checked} value="${escapeHtml(name)}">
                                 <label for="${id}">${escapeHtml(name)}</label>
-                            </div>
-                        `;
+                             </div>`;
                 });
                 checklistContainer.innerHTML = html;
 
-                // Attach events to each checkbox and item
-                document.querySelectorAll('.check-item').forEach(item => {
+                document.querySelectorAll('#checklistContainer .check-item').forEach(item => {
                     const cb = item.querySelector('input[type="checkbox"]');
                     const nameAttr = item.getAttribute('data-name');
                     if (cb) {
@@ -783,8 +796,44 @@
                         item.addEventListener('click', (e) => {
                             if (e.target.tagName !== 'INPUT') {
                                 cb.checked = !cb.checked;
-                                const event = new Event('change', { bubbles: true });
-                                cb.dispatchEvent(event);
+                                cb.dispatchEvent(new Event('change', { bubbles: true }));
+                            }
+                        });
+                    }
+                });
+            }
+
+            function renderDayChecklist() {
+                if (!dayHeadersList.length) {
+                    dayChecklistContainer.innerHTML = '<div class="check-item" style="justify-content:center;">No days found</div>';
+                    return;
+                }
+                let html = '';
+                dayHeadersList.forEach(day => {
+                    const checked = selectedDaysSet.has(day) ? 'checked' : '';
+                    const id = 'day_chk_' + escapeHtml(day).replace(/\s/g, '_');
+                    html += `<div class="check-item" data-day="${escapeHtml(day)}">
+                                <input type="checkbox" id="${id}" ${checked} value="${escapeHtml(day)}">
+                                <label for="${id}">${escapeHtml(day)}</label>
+                             </div>`;
+                });
+                dayChecklistContainer.innerHTML = html;
+
+                document.querySelectorAll('#dayChecklistContainer .check-item').forEach(item => {
+                    const cb = item.querySelector('input[type="checkbox"]');
+                    const dayAttr = item.getAttribute('data-day');
+                    if (cb) {
+                        cb.addEventListener('change', (e) => {
+                            e.stopPropagation();
+                            if (cb.checked) selectedDaysSet.add(dayAttr);
+                            else selectedDaysSet.delete(dayAttr);
+                            updateDaysPreviewText();
+                            applyFilter();
+                        });
+                        item.addEventListener('click', (e) => {
+                            if (e.target.tagName !== 'INPUT') {
+                                cb.checked = !cb.checked;
+                                cb.dispatchEvent(new Event('change', { bubbles: true }));
                             }
                         });
                     }
@@ -793,180 +842,3 @@
 
             function updatePreviewText() {
                 const count = selectedNamesSet.size;
-                if (count === 0) {
-                    selectedNamesPreview.textContent = '✨ All members';
-                } else if (count <= 2) {
-                    selectedNamesPreview.textContent = Array.from(selectedNamesSet).join(', ');
-                } else {
-                    selectedNamesPreview.textContent = `${count} members selected`;
-                }
-            }
-
-            // Apply multi-select filter
-            function applyFilter() {
-                if (!allRows.length) {
-                    filteredRows = [];
-                    renderTable();
-                    updateResultCount();
-                    return;
-                }
-
-                if (selectedNamesSet.size === 0) {
-                    filteredRows = [...allRows];
-                } else {
-                    filteredRows = allRows.filter(row => {
-                        return nameColumns.some(col => {
-                            const cellVal = (row[col] || '').toString().trim();
-                            return selectedNamesSet.has(cellVal);
-                        });
-                    });
-                }
-                renderTable();
-                updateResultCount();
-            }
-
-            function renderTable() {
-                if (!headers.length) {
-                    tbody.innerHTML = `<tr><td colspan="10" class="empty-message">⚠️ No data — check sheet</td></tr>`;
-                    return;
-                }
-                theadRow.innerHTML = headers.map(h => `<th>${escapeHtml(h)}</th>`).join('');
-                if (filteredRows.length === 0) {
-                    tbody.innerHTML =
-                        `<tr><td colspan="${headers.length}" class="empty-message">✨ No matching shifts for selected members. Try other names or clear filter.</td></tr>`;
-                    return;
-                }
-                let html = '';
-                filteredRows.forEach(row => {
-                    html += '<tr>';
-                    headers.forEach(header => {
-                        let val = row[header] !== undefined ? row[header] : '';
-                        html += `<td>${escapeHtml(val.toString())}</td>`;
-                    });
-                    html += '</tr>';
-                });
-                tbody.innerHTML = html;
-            }
-
-            function updateResultCount() {
-                const total = allRows.length;
-                const shown = filteredRows.length;
-                const selectedCount = selectedNamesSet.size;
-                if (selectedCount === 0) lastUpdatedSpan.textContent = `👥 All members · ${total} shifts`;
-                else lastUpdatedSpan.textContent = `🔍 ${shown} of ${total} shifts (${selectedCount} member${selectedCount > 1 ? 's' : ''} selected)`;
-            }
-
-            function resetAllFilters() {
-                selectedNamesSet.clear();
-                updatePreviewText();
-                renderChecklist();
-                applyFilter();
-            }
-
-            // Load CSV and init data
-            async function loadSheetData(url) {
-                try {
-                    tbody.innerHTML = `<tr><td colspan="10" class="empty-message">⏳ Fetching schedule...</td></tr>`;
-                    lastUpdatedSpan.textContent = '⟳ Updating...';
-                    const response = await fetch(url);
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    const csvText = await response.text();
-                    Papa.parse(csvText, {
-                        header: true,
-                        skipEmptyLines: true,
-                        complete: (results) => {
-                            headers = results.meta.fields || [];
-                            let rawRows = results.data.filter(row =>
-                                Object.values(row).some(v => v !== null && v !== undefined && v.toString().trim() !==
-                                '')
-                            );
-                            allRows = rawRows;
-                            nameColumns = detectNameColumns(headers);
-                            uniqueNames = extractUniqueNames(allRows, nameColumns);
-                            selectedNamesSet.clear();
-                            renderChecklist();
-                            updatePreviewText();
-                            applyFilter();
-                            const now = new Date();
-                            lastUpdatedSpan.textContent =
-                                `🕘 ${now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} · ${allRows.length} rows`;
-                        },
-                        error: (err) => {
-                            console.error(err);
-                            tbody.innerHTML =
-                                `<tr><td colspan="10" class="empty-message">❌ Parse error — check CSV format</td></tr>`;
-                            lastUpdatedSpan.textContent = 'Parse error';
-                        }
-                    });
-                } catch (err) {
-                    console.error(err);
-                    tbody.innerHTML =
-                        `<tr><td colspan="10" class="empty-message">❌ Failed to load — verify sheet URL</td></tr>`;
-                    lastUpdatedSpan.textContent = 'Connection failed';
-                }
-            }
-
-            // Month selector init
-            function initMonthSelector() {
-                monthSelect.innerHTML = '';
-                monthConfig.forEach(month => {
-                    const opt = document.createElement('option');
-                    opt.value = month.url;
-                    opt.textContent = month.label;
-                    monthSelect.appendChild(opt);
-                });
-                if (monthConfig.length) {
-                    currentCsvUrl = monthConfig[0].url;
-                    loadSheetData(currentCsvUrl);
-                }
-                monthSelect.addEventListener('change', (e) => {
-                    currentCsvUrl = e.target.value;
-                    loadSheetData(currentCsvUrl);
-                });
-            }
-
-            // Dropdown toggle & outside click
-            function initDropdownEvents() {
-                multiSelectTrigger.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    dropdown.classList.toggle('show');
-                });
-                document.addEventListener('click', (e) => {
-                    if (!document.getElementById('multiSelectGroup').contains(e.target)) {
-                        dropdown.classList.remove('show');
-                    }
-                });
-                selectAllBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    uniqueNames.forEach(name => selectedNamesSet.add(name));
-                    renderChecklist();
-                    updatePreviewText();
-                    applyFilter();
-                    dropdown.classList.remove('show');
-                });
-                clearAllBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    selectedNamesSet.clear();
-                    renderChecklist();
-                    updatePreviewText();
-                    applyFilter();
-                    dropdown.classList.remove('show');
-                });
-            }
-
-            resetBtn.addEventListener('click', resetAllFilters);
-            refreshLink.addEventListener('click', (e) => {
-                e.preventDefault();
-                if (currentCsvUrl) loadSheetData(currentCsvUrl);
-            });
-            setInterval(() => {
-                if (currentCsvUrl) loadSheetData(currentCsvUrl);
-            }, 15 * 60 * 1000);
-
-            initMonthSelector();
-            initDropdownEvents();
-
-        })();
-    </script>
-</body>
-</html>
