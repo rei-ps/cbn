@@ -496,7 +496,6 @@
             margin-right: 6px;
         }
 
-        /* T-Rex corner (unchanged) */
         .trex-corner {
             position: fixed;
             top: 20px;
@@ -516,21 +515,11 @@
         }
 
         @media (max-width: 600px) {
-            body {
-                padding: 1rem;
-            }
-            .container {
-                padding: 1.2rem;
-            }
-            h1 {
-                font-size: 1.7rem;
-            }
-            .multi-select-group {
-                min-width: 100%;
-            }
-            .password-card {
-                padding: 2rem 1.5rem;
-            }
+            body { padding: 1rem; }
+            .container { padding: 1.2rem; }
+            h1 { font-size: 1.7rem; }
+            .multi-select-group { min-width: 100%; }
+            .password-card { padding: 2rem 1.5rem; }
         }
     </style>
 </head>
@@ -555,8 +544,6 @@
 
     <!-- ========== MAIN APP ========== -->
     <div class="app-wrapper">
-
-        <!-- T-Rex corner -->
         <div class="trex-corner" title="Compare team shifts">
             <svg class="trex-svg" viewBox="0 0 60 54" fill="none">
                 <path d="M54 14L48 8L42 14L36 8L30 14L24 8L18 14L12 8L6 14L0 20V42H6L12 48L18 42L24 48L30 42L36 48L42 42L48 48L54 42H60V20L54 14Z" fill="#4B5563"/>
@@ -748,10 +735,9 @@
                 return headersList.length ? [headersList[0]] : [];
             }
 
-            // Detect columns that look like dates (e.g., "01/Sun", "02/Mon")
+            // Detect columns that look like days (everything except the first column)
             function detectDayHeaders(headersList) {
                 const firstCol = headersList[0];
-                // Every column except the first one (usually Name) is considered a day column in this layout
                 return headersList.filter(h => h !== firstCol);
             }
 
@@ -842,3 +828,16 @@
 
             function updatePreviewText() {
                 const count = selectedNamesSet.size;
+                if (count === 0) {
+                    selectedNamesPreview.textContent = '✨ All members';
+                } else if (count <= 2) {
+                    selectedNamesPreview.textContent = Array.from(selectedNamesSet).join(', ');
+                } else {
+                    selectedNamesPreview.textContent = `${count} members selected`;
+                }
+            }
+
+            function updateDaysPreviewText() {
+                const count = selectedDaysSet.size;
+                if (count === 0) {
+                    selected
