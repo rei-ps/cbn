@@ -1,14 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Garuda Team Schedule</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calabrion</title>
     <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet" />
+    <!-- PapaParse -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js">
+    </script>
     <style>
+        /* ---------- RESET & BASE ---------- */
         * {
             margin: 0;
             padding: 0;
@@ -20,15 +24,480 @@
             font-family: "Inter", -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             color: #1a2e1f;
             line-height: 1.5;
-            padding: 2.5rem 1.5rem;
+            padding: 2rem 1.5rem;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            position: relative;
         }
 
-        /* ----- GOOGLE T-REX (top right) ----- */
+        /* ---------- PASSWORD OVERLAY ---------- */
+        #passwordOverlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(20, 40, 28, 0.65);
+            backdrop-filter: blur(18px) saturate(1.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            transition: opacity 0.45s ease, visibility 0.45s ease;
+        }
+        #passwordOverlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .password-card {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(8px);
+            border-radius: 48px;
+            padding: 2.8rem 2.8rem 3rem;
+            max-width: 440px;
+            width: 100%;
+            box-shadow: 0 40px 70px -20px rgba(0, 40, 20, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.3);
+            text-align: center;
+            transform: translateY(0);
+            transition: transform 0.3s ease;
+        }
+        .password-card .lock-icon {
+            font-size: 3.2rem;
+            margin-bottom: 0.2rem;
+            display: inline-block;
+            filter: drop-shadow(0 4px 8px rgba(0, 40, 20, 0.05));
+        }
+        .password-card h2 {
+            font-weight: 600;
+            font-size: 1.6rem;
+            letter-spacing: -0.02em;
+            color: #1f4a2e;
+            margin-bottom: 0.3rem;
+        }
+        .password-card .sub {
+            color: #4a6b55;
+            font-size: 0.9rem;
+            margin-bottom: 1.8rem;
+            font-weight: 450;
+        }
+        .password-card .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+        .password-card input[type="password"] {
+            padding: 0.9rem 1.4rem;
+            border: 2px solid #d4e5d9;
+            border-radius: 60px;
+            font-size: 1rem;
+            font-family: inherit;
+            background: white;
+            transition: border 0.2s, box-shadow 0.2s;
+            outline: none;
+            width: 100%;
+        }
+        .password-card input[type="password"]:focus {
+            border-color: #2d7a4f;
+            box-shadow: 0 0 0 4px rgba(45, 122, 79, 0.12);
+        }
+        .password-card input[type="password"]::placeholder {
+            color: #a3b8a9;
+            font-weight: 400;
+        }
+        .password-card .error-msg {
+            color: #c43e3e;
+            font-size: 0.8rem;
+            font-weight: 500;
+            min-height: 1.4rem;
+            margin-top: 0.1rem;
+            transition: opacity 0.2s;
+        }
+        .password-card .btn-unlock {
+            background: linear-gradient(135deg, #1f4a2e 0%, #2d7a4f 100%);
+            border: none;
+            padding: 0.9rem;
+            border-radius: 60px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.2s;
+            width: 100%;
+            letter-spacing: 0.01em;
+            box-shadow: 0 4px 14px rgba(45, 122, 79, 0.3);
+        }
+        .password-card .btn-unlock:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 22px rgba(45, 122, 79, 0.35);
+        }
+        .password-card .btn-unlock:active {
+            transform: translateY(0);
+        }
+        .password-card .hint {
+            margin-top: 1.2rem;
+            font-size: 0.75rem;
+            color: #7d9484;
+            letter-spacing: 0.02em;
+        }
+        .password-card .hint span {
+            background: #e6f2ea;
+            padding: 0.15rem 0.8rem;
+            border-radius: 30px;
+            font-weight: 500;
+            color: #1f4a2e;
+        }
+
+        /* ---------- MAIN APP ---------- */
+        .app-wrapper {
+            width: 100%;
+            max-width: 1400px;
+        }
+
+        .container {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(12px);
+            border-radius: 36px;
+            box-shadow: 0 25px 45px -12px rgba(0, 40, 20, 0.12), 0 8px 18px rgba(0, 40, 20, 0.04);
+            padding: 1.8rem 2rem 2.2rem;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .header-section {
+            margin-bottom: 1.4rem;
+        }
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            margin-bottom: 0.4rem;
+        }
+        h1 {
+            font-weight: 600;
+            font-size: 2.2rem;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #1f4a2e 0%, #2d7a4f 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        h1 span {
+            background: #ffffffd6;
+            padding: 4px 14px;
+            border-radius: 60px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #1f4a2e;
+        }
+        .subhead {
+            font-size: 0.9rem;
+            color: #4a6b55;
+            border-bottom: 1.5px solid rgba(45, 122, 79, 0.12);
+            padding-bottom: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .update-badge {
+            background: #e6f2ea;
+            padding: 0.3rem 1rem;
+            border-radius: 60px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #1f4a2e;
+            backdrop-filter: blur(4px);
+        }
+        .month-selector {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            margin-bottom: 1.25rem;
+            background: #ffffffc7;
+            padding: 0.4rem 1rem 0.4rem 1.5rem;
+            border-radius: 60px;
+            width: fit-content;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 2px 8px rgba(0, 40, 20, 0.02), 0 0 0 1px rgba(255, 255, 255, 0.7);
+        }
+        .month-selector label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #2d7a4f;
+        }
+        .month-select {
+            padding: 0.45rem 2rem 0.45rem 1rem;
+            border: 1.5px solid #bdd6c4;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            background: white;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%232d7a4f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 12px;
+        }
+        .month-select:hover,
+        .month-select:focus {
+            border-color: #4a9e6e;
+            outline: none;
+        }
+
+        .filter-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem 1.5rem;
+            margin-bottom: 1.5rem;
+            align-items: center;
+        }
+        .multi-select-group {
+            position: relative;
+            min-width: 240px;
+            flex: 1 1 auto;
+        }
+        .multi-select-group label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #4a6b55;
+            margin-bottom: 0.25rem;
+        }
+        .multi-select-trigger {
+            background: white;
+            border: 1.5px solid #cfe0d4;
+            border-radius: 32px;
+            padding: 0.45rem 2rem 0.45rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 450;
+            color: #1a2e1f;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s;
+            position: relative;
+            user-select: none;
+            backdrop-filter: blur(2px);
+        }
+        .multi-select-trigger:hover {
+            border-color: #a8c9b3;
+            background: #fefefe;
+        }
+        .trigger-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 180px;
+        }
+        .trigger-arrow {
+            font-size: 0.7rem;
+            color: #4a6b55;
+            transition: transform 0.2s;
+        }
+        .multi-select-dropdown {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 12px 28px -8px rgba(0, 40, 20, 0.2), 0 0 0 1px rgba(0, 40, 20, 0.02);
+            z-index: 50;
+            max-height: 280px;
+            overflow-y: auto;
+            padding: 0.6rem 0.2rem 0.6rem 0;
+            display: none;
+            backdrop-filter: blur(0);
+        }
+        .multi-select-dropdown.show {
+            display: block;
+        }
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: background 0.1s;
+        }
+        .check-item:hover {
+            background: #e6f5ec;
+        }
+        .check-item input {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: #2d7a4f;
+            margin: 0;
+        }
+        .check-item label {
+            flex: 1;
+            cursor: pointer;
+            font-weight: normal;
+            text-transform: none;
+            letter-spacing: normal;
+            font-size: 0.85rem;
+            color: #1a3a24;
+            margin-bottom: 0;
+        }
+        .dropdown-actions {
+            display: flex;
+            gap: 12px;
+            padding: 0.6rem 1rem;
+            border-top: 1px solid #e4efe7;
+            margin-top: 4px;
+            background: #f7fcf9;
+            border-radius: 0 0 20px 20px;
+        }
+        .dropdown-actions button {
+            background: transparent;
+            border: none;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #2d7a4f;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 30px;
+        }
+        .dropdown-actions button:hover {
+            background: #e0f0e5;
+        }
+        .btn-reset {
+            background: #ffffff;
+            border: 1.5px solid #cfe0d4;
+            padding: 0.45rem 1.2rem;
+            border-radius: 32px;
+            font-size: 0.8rem;
+            font-weight: 550;
+            color: #1f4a2e;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .btn-reset:hover {
+            background: #eaf5ee;
+            border-color: #a8c9b3;
+            transform: translateY(-1px);
+        }
+
+        .table-wrapper {
+            overflow: auto;
+            border-radius: 24px;
+            background: white;
+            box-shadow: 0 12px 28px -8px rgba(0, 40, 20, 0.06), 0 0 0 1px rgba(0, 40, 20, 0.02);
+            max-height: 68vh;
+            max-width: 100%;
+        }
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 0.9rem;
+            min-width: 680px;
+        }
+        th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            text-align: left;
+            padding: 1rem 1.2rem;
+            background: #f0f8f3;
+            font-weight: 600;
+            color: #143a22;
+            border-bottom: 2px solid #b8d6c3;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+        }
+        td {
+            padding: 0.9rem 1.2rem;
+            border-bottom: 1px solid #e4efe7;
+            background-color: #ffffff;
+            white-space: nowrap;
+        }
+        tbody tr:nth-child(even) td {
+            background-color: #f7fcf9;
+        }
+        tbody tr:hover td {
+            background-color: #e6f5ec;
+            transition: background 0.12s;
+        }
+        th:first-child,
+        td:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 5;
+            background-color: #ffffff !important;
+        }
+        th:first-child {
+            background-color: #f0f8f3 !important;
+            z-index: 15;
+        }
+        tbody tr:nth-child(even) td:first-child {
+            background-color: #f7fcf9 !important;
+        }
+        tbody tr:hover td:first-child {
+            background-color: #e6f5ec !important;
+        }
+        th:first-child::after,
+        td:first-child::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: -6px;
+            width: 6px;
+            height: 100%;
+            background: linear-gradient(to right, rgba(0, 40, 20, 0.06), transparent);
+            pointer-events: none;
+        }
+        .empty-message {
+            text-align: center;
+            padding: 3rem !important;
+            color: #6b8574;
+            font-style: italic;
+        }
+        .footer-note {
+            margin-top: 1.5rem;
+            font-size: 0.8rem;
+            color: #5f7d68;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 1.2rem;
+        }
+        .footer-note a {
+            color: #1f4a2e;
+            text-decoration: none;
+            font-weight: 500;
+            border-bottom: 1.5px dotted #9bc4a8;
+        }
+        .accent-dot {
+            display: inline-block;
+            width: 9px;
+            height: 9px;
+            border-radius: 10px;
+            background: #4a9e6e;
+            margin-right: 6px;
+        }
+
+        /* T-Rex corner */
         .trex-corner {
             position: fixed;
             top: 20px;
@@ -42,637 +511,368 @@
             opacity: 1;
         }
         .trex-svg {
-            width: 48px;
+            width: 44px;
             height: auto;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.08));
-        }
-
-        .container {
-            max-width: 1400px;
-            width: 100%;
-            background: rgba(255, 255, 255, 0.88);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-radius: 36px;
-            box-shadow: 0 25px 45px -12px rgba(0, 40, 20, 0.12), 0 8px 18px rgba(0, 40, 20, 0.04);
-            padding: 2.2rem 2.5rem 2.8rem;
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            transition: all 0.2s ease;
-        }
-
-        .header-section {
-            margin-bottom: 1.8rem;
-            position: relative;
-        }
-
-        .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        h1 {
-            font-weight: 600;
-            font-size: 2.5rem;
-            letter-spacing: -0.02em;
-            background: linear-gradient(135deg, #1f4a2e 0%, #2d7a4f 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            margin-bottom: 0.25rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        h1 span {
-            background: #ffffffd6;
-            padding: 6px 16px;
-            border-radius: 60px;
-            font-size: 1rem;
-            font-weight: 500;
-            color: #1f4a2e;
-            letter-spacing: normal;
-            box-shadow: 0 2px 6px rgba(0, 40, 20, 0.03);
-        }
-
-        .subhead {
-            font-size: 1rem;
-            color: #4a6b55;
-            margin-top: 0.2rem;
-            border-bottom: 1.5px solid rgba(45, 122, 79, 0.12);
-            padding-bottom: 1.4rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .update-badge {
-            background: #e6f2ea;
-            padding: 0.4rem 1.2rem;
-            border-radius: 60px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: #1f4a2e;
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.6);
-            backdrop-filter: blur(4px);
-        }
-
-        .month-selector {
-            display: flex;
-            align-items: center;
-            gap: 1.2rem;
-            margin-bottom: 2rem;
-            background: #ffffffc7;
-            padding: 0.6rem 1.2rem 0.6rem 1.8rem;
-            border-radius: 80px;
-            width: fit-content;
-            backdrop-filter: blur(8px);
-            box-shadow: 0 4px 10px rgba(0, 40, 20, 0.02), 0 0 0 1px rgba(255,255,255,0.8);
-        }
-
-        .month-selector label {
-            font-size: 0.9rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            color: #2d7a4f;
-        }
-
-        .month-select {
-            padding: 0.6rem 2.4rem 0.6rem 1.2rem;
-            border: 1.5px solid #bdd6c4;
-            border-radius: 60px;
-            font-size: 1rem;
-            font-weight: 500;
-            background: white;
-            color: #1a2e1f;
-            cursor: pointer;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%232d7a4f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 1.2rem center;
-            background-size: 14px;
-            transition: border 0.2s, box-shadow 0.2s;
-        }
-
-        .month-select:hover, .month-select:focus {
-            border-color: #4a9e6e;
-            box-shadow: 0 0 0 3px rgba(45, 122, 79, 0.08);
-            outline: none;
-        }
-
-        .filter-panel {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1.5rem 2rem;
-            margin-bottom: 2.8rem;
-            align-items: flex-end;
-        }
-
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            min-width: 260px;
-            flex: 2 1 260px;
-        }
-
-        .filter-group label {
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: #4a6b55;
-        }
-
-        /* Dropdown styling similar to month select */
-        .filter-select {
-            padding: 0.9rem 1.2rem;
-            border: 1.8px solid #cfe0d4;
-            border-radius: 24px;
-            font-size: 1rem;
-            background: white;
-            transition: all 0.2s;
-            font-family: inherit;
-            color: #1a2e1f;
-            box-shadow: 0 2px 6px rgba(0, 40, 20, 0.01);
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234a6b55' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 1.2rem center;
-            background-size: 14px;
-            cursor: pointer;
-        }
-
-        .filter-select:focus {
-            outline: none;
-            border-color: #4a9e6e;
-            box-shadow: 0 4px 12px rgba(31, 74, 46, 0.08), 0 0 0 3px rgba(45, 122, 79, 0.06);
-        }
-
-        .btn-reset {
-            background: #ffffff;
-            border: 1.8px solid #cfe0d4;
-            padding: 0.9rem 1.8rem;
-            border-radius: 60px;
-            font-size: 0.95rem;
-            font-weight: 550;
-            color: #1f4a2e;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-left: auto;
-            box-shadow: 0 2px 6px rgba(0, 40, 20, 0.02);
-            backdrop-filter: blur(4px);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .btn-reset:hover {
-            background: #eaf5ee;
-            border-color: #a8c9b3;
-            color: #143a22;
-            box-shadow: 0 8px 14px rgba(31, 74, 46, 0.06);
-            transform: translateY(-1px);
-        }
-
-        /* ----- TABLE WRAPPER ----- */
-        .table-wrapper {
-            overflow: auto;
-            border-radius: 24px;
-            background: white;
-            box-shadow: 0 12px 28px -8px rgba(0, 40, 20, 0.06), 0 0 0 1px rgba(0, 40, 20, 0.02);
-            max-height: 70vh;
-            max-width: 100%;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            font-size: 0.95rem;
-            min-width: 700px;
-            position: relative;
-        }
-
-        /* STICKY HEADER */
-        th {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            text-align: left;
-            padding: 1.2rem 1.5rem;
-            background: #f0f8f3;
-            font-weight: 600;
-            color: #143a22;
-            border-bottom: 2px solid #b8d6c3;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            white-space: nowrap;
-            box-shadow: 0 2px 4px -2px rgba(0, 40, 20, 0.05);
-        }
-
-        td {
-            padding: 1.1rem 1.5rem;
-            border-bottom: 1px solid #e4efe7;
-            vertical-align: middle;
-            color: #1f2e24;
-            background-color: #ffffff;
-            white-space: nowrap;
-        }
-
-        /* Zebra striping */
-        tbody tr:nth-child(even) td {
-            background-color: #f7fcf9;
-        }
-
-        tbody tr:hover td {
-            background-color: #e6f5ec;
-            transition: background 0.15s;
-        }
-
-        tr:last-child td {
-            border-bottom: none;
-        }
-
-        td:first-child {
-            font-weight: 500;
-            color: #1a3a24;
-        }
-
-        /* ----- STICKY FIRST COLUMN (FIXED BACKGROUND) ----- */
-        th:first-child,
-        td:first-child {
-            position: sticky;
-            left: 0;
-            z-index: 5;
-            /* Solid white background to prevent bleed */
-            background-color: #ffffff !important;
-        }
-
-        /* Header first cell background */
-        th:first-child {
-            background-color: #f0f8f3 !important;
-            z-index: 15;
-        }
-
-        /* Override zebra striping for sticky column */
-        tbody tr:nth-child(even) td:first-child {
-            background-color: #f7fcf9 !important;
-        }
-        tbody tr:hover td:first-child {
-            background-color: #e6f5ec !important;
-        }
-
-        /* Shadow on right edge of sticky column */
-        th:first-child::after,
-        td:first-child::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: -6px;
-            width: 6px;
-            height: 100%;
-            background: linear-gradient(to right, rgba(0, 40, 20, 0.06), transparent);
-            pointer-events: none;
-        }
-
-        .empty-message {
-            text-align: center;
-            padding: 4rem !important;
-            color: #6b8574;
-            font-style: italic;
-            font-size: 1.05rem;
-        }
-
-        /* Footer */
-        .footer-note {
-            margin-top: 2rem;
-            font-size: 0.85rem;
-            color: #5f7d68;
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .footer-note a {
-            color: #1f4a2e;
-            text-decoration: none;
-            font-weight: 500;
-            border-bottom: 1.5px dotted #9bc4a8;
-            padding-bottom: 2px;
-        }
-
-        .footer-note a:hover {
-            color: #143a22;
-            border-bottom-style: solid;
-        }
-
-        .accent-dot {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 10px;
-            background: #4a9e6e;
-            margin-right: 8px;
-            box-shadow: 0 2px 5px rgba(74, 158, 110, 0.3);
+            filter: drop-shadow(0 2px 4px rgba(0, 40, 20, 0.08));
         }
 
         @media (max-width: 600px) {
-            body { padding: 1rem; }
-            .container { padding: 1.5rem; }
-            h1 { font-size: 2rem; }
-            .btn-reset { margin-left: 0; }
-            .trex-corner { top: 10px; right: 15px; }
-            .trex-svg { width: 36px; }
+            body {
+                padding: 1rem;
+            }
+            .container {
+                padding: 1.2rem;
+            }
+            h1 {
+                font-size: 1.7rem;
+            }
+            .multi-select-group {
+                min-width: 100%;
+            }
+            .password-card {
+                padding: 2rem 1.5rem;
+            }
         }
     </style>
-    <!-- Papa Parse -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
 <body>
 
-<!-- Google T-Rex (playful touch) -->
-<div class="trex-corner" title="Rawr!">
-    <svg class="trex-svg" viewBox="0 0 60 54" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M54 14L48 8L42 14L36 8L30 14L24 8L18 14L12 8L6 14L0 20V42H6L12 48L18 42L24 48L30 42L36 48L42 42L48 48L54 42H60V20L54 14Z" fill="#2d7a4f"/>
-        <circle cx="42" cy="24" r="3" fill="white"/>
-        <circle cx="18" cy="24" r="3" fill="white"/>
-        <path d="M24 36H36V42H24V36Z" fill="#143a22"/>
-        <!-- little ground line -->
-        <line x1="0" y1="52" x2="60" y2="52" stroke="#2d7a4f" stroke-width="2"/>
-        <!-- tiny cactus -->
-        <rect x="52" y="36" width="4" height="16" fill="#2d7a4f" rx="2"/>
-        <rect x="50" y="40" width="8" height="4" fill="#2d7a4f" rx="2"/>
-    </svg>
-</div>
-
-<div class="container">
-    <div class="header-section">
-        <div class="header-top">
-            <h1>
-                📋 Garuda Team Shifts
-                <span>schedule</span>
-            </h1>
-            <div class="update-badge" id="lastUpdated">Loading data…</div>
-        </div>
-        <div class="subhead">
-            <div style="display: flex; align-items: center;">
-                <span class="accent-dot"></span> 
-                <span>Filter by name — select month below</span>
+    <!-- ========== PASSWORD OVERLAY ========== -->
+    <div id="passwordOverlay">
+        <div class="password-card">
+            <div class="lock-icon">🔐</div>
+            <h2>Calabrion</h2>
+            <p class="sub">Enter the access key to view the schedule</p>
+            <div class="input-group">
+                <input type="password" id="passwordInput" placeholder="Password" autofocus />
+                <div class="error-msg" id="passwordError"></div>
+                <button class="btn-unlock" id="unlockBtn">Unlock →</button>
             </div>
-            <span>⚡ auto‑sync from Google Sheets</span>
+            <div class="hint">
+                🔑 hint: <span>n/a</span>
+            </div>
         </div>
     </div>
 
-    <!-- Month selector -->
-    <div class="month-selector">
-        <label for="monthSelect">📅 Month</label>
-        <select id="monthSelect" class="month-select"></select>
-    </div>
+    <!-- ========== MAIN APP ========== -->
+    <div class="app-wrapper">
 
-    <!-- Filter controls: now dropdown for names -->
-    <div class="filter-panel">
-        <div class="filter-group">
-            <label for="nameFilterSelect">👤 Team member</label>
-            <select id="nameFilterSelect" class="filter-select">
-                <option value="">All members</option>
-            </select>
+        <!-- T-Rex corner -->
+        <div class="trex-corner" title="Compare team shifts">
+            <svg class="trex-svg" viewBox="0 0 60 54" fill="none">
+                <path d="M54 14L48 8L42 14L36 8L30 14L24 8L18 14L12 8L6 14L0 20V42H6L12 48L18 42L24 48L30 42L36 48L42 42L48 48L54 42H60V20L54 14Z" fill="#2d7a4f"/>
+                <circle cx="42" cy="24" r="3" fill="white"/>
+                <circle cx="18" cy="24" r="3" fill="white"/>
+                <path d="M24 36H36V42H24V36Z" fill="#143a22"/>
+                <line x1="0" y1="52" x2="60" y2="52" stroke="#2d7a4f" stroke-width="2"/>
+                <rect x="52" y="36" width="4" height="16" fill="#2d7a4f" rx="2"/>
+                <rect x="50" y="40" width="8" height="4" fill="#2d7a4f" rx="2"/>
+            </svg>
         </div>
-        <button class="btn-reset" id="resetFilters">
-            <span>↻</span> Clear filters
-        </button>
+
+        <div class="container">
+            <div class="header-section">
+                <div class="header-top">
+                    <h1>📋 Calabrion~ <span>rei v7.2</span></h1>
+                    <div class="update-badge" id="lastUpdated">Loading…</div>
+                </div>
+                <div class="subhead">
+                    <div><span class="accent-dot"></span> Use the filter to compare shifts.</div>
+                    <span>⚡ auto‑sync from Sheets</span>
+                </div>
+            </div>
+
+            <!-- Month selector -->
+            <div class="month-selector">
+                <label for="monthSelect">📅 Month / Week</label>
+                <select id="monthSelect" class="month-select"></select>
+            </div>
+
+            <!-- Compact multi-select checklist -->
+            <div class="filter-panel">
+                <div class="multi-select-group" id="multiSelectGroup">
+                    <label>👥 Members</label>
+                    <div class="multi-select-trigger" id="multiSelectTrigger">
+                        <span class="trigger-text" id="selectedNamesPreview">All members</span>
+                        <span class="trigger-arrow">▼</span>
+                    </div>
+                    <div class="multi-select-dropdown" id="multiSelectDropdown">
+                        <div id="checklistContainer"></div>
+                        <div class="dropdown-actions">
+                            <button id="selectAllBtn">✓ Select all</button>
+                            <button id="clearAllBtn">✗ Clear</button>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn-reset" id="resetFilters">↻ Clear filters &amp; selections</button>
+            </div>
+
+            <!-- Schedule table -->
+            <div class="table-wrapper">
+                <table id="scheduleTable">
+                    <thead><tr id="tableHeader"></tr></thead>
+                    <tbody id="tableBody"><tr><td colspan="10" class="empty-message">⏳ Loading schedule...</td></tr></tbody>
+                </table>
+            </div>
+            <div class="footer-note">
+                <span>🔄 Auto‑refresh every 15 min</span>
+                <a href="#" id="refreshLink">↻ Refresh now</a>
+            </div>
+        </div>
     </div>
 
-    <!-- Schedule table -->
-    <div class="table-wrapper">
-        <table id="scheduleTable">
-            <thead>
-                <tr id="tableHeader"></tr>
-            </thead>
-            <tbody id="tableBody">
-                <tr><td colspan="10" class="empty-message">⏳ Loading schedule…</td></tr>
-            </tbody>
-        </table>
-    </div>
-    
-    <div class="footer-note">
-        <span>🔄 Updates every 15 min</span>
-        <a href="#" id="refreshLink">↻ Refresh now</a>
-    </div>
-</div>
+    <script>
+        (function() {
+            // ============================================================
+            //  PASSWORD LOGIC
+            // ============================================================
+            const CORRECT_PASSWORD = 'natsuiro7216'; // <-- change this to your desired password
+            const overlay = document.getElementById('passwordOverlay');
+            const passwordInput = document.getElementById('passwordInput');
+            const unlockBtn = document.getElementById('unlockBtn');
+            const passwordError = document.getElementById('passwordError');
 
-<script>
-    (function() {
-        "use strict";
+            // Check session storage for existing auth
+            function checkSession() {
+                if (sessionStorage.getItem('calabrion_auth') === 'true') {
+                    overlay.classList.add('hidden');
+                    return true;
+                }
+                return false;
+            }
 
-        // ---------- CONFIGURATION: ADD YOUR MONTH URLs ----------
-        const monthConfig = [
-            { label: "May 2026", url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSVVITCbL1Y9pdu1m1S0hC31EDjFy1vkLLgiiBXVgEeEJOlxk93M8KaT0dAu0oChiBExMgnJ2CLrIXI/pub?gid=1817531407&single=true&output=csv" },
-            { label: "May 2026", url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSVVITCbL1Y9pdu1m1S0hC31EDjFy1vkLLgiiBXVgEeEJOlxk93M8KaT0dAu0oChiBExMgnJ2CLrIXI/pub?gid=1779576104&single=true&output=csv" },
-            // Add more months as needed
-        ];
-        // ---------------------------------------------------------
+            // Attempt unlock
+            function attemptUnlock() {
+                const entered = passwordInput.value.trim();
+                if (entered === CORRECT_PASSWORD) {
+                    sessionStorage.setItem('calabrion_auth', 'true');
+                    overlay.classList.add('hidden');
+                    passwordError.textContent = '';
+                    passwordInput.value = '';
+                } else {
+                    passwordError.textContent = '❌ Incorrect password. Try again.';
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                }
+            }
 
-        // DOM elements
-        const monthSelect = document.getElementById('monthSelect');
-        const nameFilterSelect = document.getElementById('nameFilterSelect');
-        const resetBtn = document.getElementById('resetFilters');
-        const tbody = document.getElementById('tableBody');
-        const theadRow = document.getElementById('tableHeader');
-        const lastUpdatedSpan = document.getElementById('lastUpdated');
-        const refreshLink = document.getElementById('refreshLink');
+            // Event listeners
+            unlockBtn.addEventListener('click', attemptUnlock);
+            passwordInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    attemptUnlock();
+                }
+            });
 
-        // State
-        let allRows = [];
-        let headers = [];
-        let filteredRows = [];
-        let currentCsvUrl = '';
-        let nameColumns = [];
+            // Auto-focus the input
+            setTimeout(() => passwordInput.focus(), 300);
 
-        // Extract unique names from data using detected name columns
-        function extractUniqueNames(rows) {
-            if (!nameColumns.length) return [];
-            const namesSet = new Set();
-            rows.forEach(row => {
-                nameColumns.forEach(col => {
-                    const val = row[col];
-                    if (val && val.toString().trim() !== '') {
-                        namesSet.add(val.toString().trim());
-                    }
+            // If session already active, hide overlay immediately
+            if (checkSession()) {
+                // Already hidden
+            }
+
+            // ============================================================
+            //  EXISTING APP LOGIC
+            // ============================================================
+
+            // ---------- CONFIGURATION ----------
+            const monthConfig = [
+                { label: "Nov 2026", url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSVVITCbL1Y9pdu1m1S0hC31EDjFy1vkLLgiiBXVgEeEJOlxk93M8KaT0dAu0oChiBExMgnJ2CLrIXI/pub?gid=461378009&single=true&output=csv" },
+                { label: "Oct 2026", url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSVVITCbL1Y9pdu1m1S0hC31EDjFy1vkLLgiiBXVgEeEJOlxk93M8KaT0dAu0oChiBExMgnJ2CLrIXI/pub?gid=1330899179&single=true&output=csv" },
+                { label: "Sep 2026", url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSVVITCbL1Y9pdu1m1S0hC31EDjFy1vkLLgiiBXVgEeEJOlxk93M8KaT0dAu0oChiBExMgnJ2CLrIXI/pub?gid=1039094321&single=true&output=csv" },
+                { label: "Aug 2026", url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSVVITCbL1Y9pdu1m1S0hC31EDjFy1vkLLgiiBXVgEeEJOlxk93M8KaT0dAu0oChiBExMgnJ2CLrIXI/pub?gid=751431964&single=true&output=csv" },
+                { label: "July 2026", url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSVVITCbL1Y9pdu1m1S0hC31EDjFy1vkLLgiiBXVgEeEJOlxk93M8KaT0dAu0oChiBExMgnJ2CLrIXI/pub?gid=2070281782&single=true&output=csv" },
+                { label: "June 2026", url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSVVITCbL1Y9pdu1m1S0hC31EDjFy1vkLLgiiBXVgEeEJOlxk93M8KaT0dAu0oChiBExMgnJ2CLrIXI/pub?gid=1779576104&single=true&output=csv" },
+            ];
+            // -----------------------------------
+
+            // DOM elements
+            const monthSelect = document.getElementById('monthSelect');
+            const tbody = document.getElementById('tableBody');
+            const theadRow = document.getElementById('tableHeader');
+            const lastUpdatedSpan = document.getElementById('lastUpdated');
+            const refreshLink = document.getElementById('refreshLink');
+            const resetBtn = document.getElementById('resetFilters');
+
+            // Multi-select elements
+            const multiSelectTrigger = document.getElementById('multiSelectTrigger');
+            const dropdown = document.getElementById('multiSelectDropdown');
+            const checklistContainer = document.getElementById('checklistContainer');
+            const selectAllBtn = document.getElementById('selectAllBtn');
+            const clearAllBtn = document.getElementById('clearAllBtn');
+            const selectedNamesPreview = document.getElementById('selectedNamesPreview');
+
+            // State
+            let allRows = [];
+            let headers = [];
+            let filteredRows = [];
+            let currentCsvUrl = '';
+            let nameColumns = [];
+            let uniqueNames = [];
+            let selectedNamesSet = new Set();
+
+            // Helper: escapeHtml
+            function escapeHtml(str) {
+                if (!str) return '';
+                return str.replace(/[&<>]/g, function(m) {
+                    if (m === '&') return '&amp;';
+                    if (m === '<') return '&lt;';
+                    if (m === '>') return '&gt;';
+                    return m;
                 });
-            });
-            return Array.from(namesSet).sort((a, b) => a.localeCompare(b));
-        }
-
-        // Populate name dropdown
-        function populateNameDropdown() {
-            const uniqueNames = extractUniqueNames(allRows);
-            const currentValue = nameFilterSelect.value;
-            nameFilterSelect.innerHTML = '<option value="">All members</option>';
-            uniqueNames.forEach(name => {
-                const option = document.createElement('option');
-                option.value = name;
-                option.textContent = name;
-                nameFilterSelect.appendChild(option);
-            });
-            // Restore selection if possible
-            if (currentValue && uniqueNames.includes(currentValue)) {
-                nameFilterSelect.value = currentValue;
-            } else {
-                nameFilterSelect.value = '';
-            }
-        }
-
-        // Identify name columns
-        function detectNameColumns() {
-            nameColumns = headers.filter(h => 
-                /name|nama|staff|anggota|member|person|team/i.test(h)
-            );
-            // Fallback: if no name-like column, use first column
-            if (nameColumns.length === 0 && headers.length > 0) {
-                nameColumns = [headers[0]];
-            }
-        }
-
-        function renderTable() {
-            if (!headers.length) {
-                tbody.innerHTML = `<tr><td colspan="10" class="empty-message">No data — check your sheet</td></tr>`;
-                return;
-            }
-            theadRow.innerHTML = headers.map(h => `<th>${h}</th>`).join('');
-
-            if (filteredRows.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="${headers.length}" class="empty-message">✨ No matching shifts</td></tr>`;
-                return;
             }
 
-            let html = '';
-            filteredRows.forEach(row => {
-                html += '<tr>';
-                headers.forEach(header => {
-                    let value = row[header] || '';
-                    html += `<td>${value}</td>`;
-                });
-                html += '</tr>';
-            });
-            tbody.innerHTML = html;
-        }
+            // Detect name columns (case-insensitive)
+            function detectNameColumns(headersList) {
+                const candidates = headersList.filter(h =>
+                    /name|nama|staff|anggota|member|person|team|shift member/i.test(h)
+                );
+                if (candidates.length) return candidates;
+                return headersList.length ? [headersList[0]] : [];
+            }
 
-        function applyFilter() {
-            const selectedName = nameFilterSelect.value;
-            if (selectedName === '') {
-                filteredRows = [...allRows];
-            } else {
-                filteredRows = allRows.filter(row => {
-                    return nameColumns.some(col => {
-                        const val = (row[col] || '').toString().trim();
-                        return val === selectedName;
+            // Extract unique names from rows using nameColumns
+            function extractUniqueNames(rows, columns) {
+                const set = new Set();
+                rows.forEach(row => {
+                    columns.forEach(col => {
+                        const val = row[col];
+                        if (val && val.toString().trim() !== '') {
+                            set.add(val.toString().trim());
+                        }
                     });
                 });
+                return Array.from(set).sort((a, b) => a.localeCompare(b));
             }
-            renderTable();
-            updateResultCount();
-        }
 
-        function updateResultCount() {
-            const count = filteredRows.length;
-            const total = allRows.length;
-            lastUpdatedSpan.textContent = `📋 ${count} of ${total} shifts`;
-        }
+            // Render checklist UI
+            function renderChecklist() {
+                if (!uniqueNames.length) {
+                    checklistContainer.innerHTML = '<div class="check-item" style="justify-content:center;">No members found</div>';
+                    return;
+                }
+                let html = '';
+                uniqueNames.forEach(name => {
+                    const checked = selectedNamesSet.has(name) ? 'checked' : '';
+                    const id = 'chk_' + escapeHtml(name).replace(/\s/g, '_');
+                    html += `
+                            <div class="check-item" data-name="${escapeHtml(name)}">
+                                <input type="checkbox" id="${id}" ${checked} value="${escapeHtml(name)}">
+                                <label for="${id}">${escapeHtml(name)}</label>
+                            </div>
+                        `;
+                });
+                checklistContainer.innerHTML = html;
 
-        function resetFilters() {
-            nameFilterSelect.value = '';
-            filteredRows = [...allRows];
-            renderTable();
-            updateResultCount();
-        }
-
-        async function loadSheetData(url) {
-            try {
-                tbody.innerHTML = `<tr><td colspan="10" class="empty-message">⏳ Fetching schedule…</td></tr>`;
-                lastUpdatedSpan.textContent = 'Updating…';
-                
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const csvText = await response.text();
-                
-                Papa.parse(csvText, {
-                    header: true,
-                    skipEmptyLines: true,
-                    complete: (results) => {
-                        headers = results.meta.fields || [];
-                        allRows = results.data.filter(row => 
-                            Object.values(row).some(v => v !== null && v !== undefined && v.toString().trim() !== '')
-                        );
-                        
-                        detectNameColumns();
-                        populateNameDropdown();
-                        
-                        filteredRows = [...allRows];
-                        renderTable();
-                        updateResultCount();
-                        
-                        const now = new Date();
-                        lastUpdatedSpan.textContent = `🔄 Updated ${now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
-                    },
-                    error: (err) => {
-                        console.error(err);
-                        tbody.innerHTML = `<tr><td colspan="10" class="empty-message">❌ Parse error</td></tr>`;
-                        lastUpdatedSpan.textContent = 'Error';
+                // Attach events to each checkbox and item
+                document.querySelectorAll('.check-item').forEach(item => {
+                    const cb = item.querySelector('input[type="checkbox"]');
+                    const nameAttr = item.getAttribute('data-name');
+                    if (cb) {
+                        cb.addEventListener('change', (e) => {
+                            e.stopPropagation();
+                            if (cb.checked) selectedNamesSet.add(nameAttr);
+                            else selectedNamesSet.delete(nameAttr);
+                            updatePreviewText();
+                            applyFilter();
+                        });
+                        item.addEventListener('click', (e) => {
+                            if (e.target.tagName !== 'INPUT') {
+                                cb.checked = !cb.checked;
+                                const event = new Event('change', { bubbles: true });
+                                cb.dispatchEvent(event);
+                            }
+                        });
                     }
                 });
-            } catch (error) {
-                console.error(error);
-                tbody.innerHTML = `<tr><td colspan="10" class="empty-message">❌ Could not load. Check month URL.</td></tr>`;
-                lastUpdatedSpan.textContent = 'Connection failed';
-            }
-        }
-
-        function initMonthSelector() {
-            monthSelect.innerHTML = '';
-            monthConfig.forEach((month) => {
-                const option = document.createElement('option');
-                option.value = month.url;
-                option.textContent = month.label;
-                monthSelect.appendChild(option);
-            });
-            
-            if (monthConfig.length > 0) {
-                currentCsvUrl = monthConfig[0].url;
-                loadSheetData(currentCsvUrl);
-            } else {
-                tbody.innerHTML = `<tr><td colspan="10" class="empty-message">⚠️ No months configured. Edit monthConfig.</td></tr>`;
             }
 
-            monthSelect.addEventListener('change', (e) => {
-                currentCsvUrl = e.target.value;
-                loadSheetData(currentCsvUrl);
-                resetFilters();
-            });
-        }
+            function updatePreviewText() {
+                const count = selectedNamesSet.size;
+                if (count === 0) {
+                    selectedNamesPreview.textContent = '✨ All members';
+                } else if (count <= 2) {
+                    selectedNamesPreview.textContent = Array.from(selectedNamesSet).join(', ');
+                } else {
+                    selectedNamesPreview.textContent = `${count} members selected`;
+                }
+            }
 
-        // Event listeners
-        nameFilterSelect.addEventListener('change', applyFilter);
-        resetBtn.addEventListener('click', resetFilters);
-        
-        refreshLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (currentCsvUrl) loadSheetData(currentCsvUrl);
-        });
+            // Apply multi-select filter
+            function applyFilter() {
+                if (!allRows.length) {
+                    filteredRows = [];
+                    renderTable();
+                    updateResultCount();
+                    return;
+                }
 
-        setInterval(() => {
-            if (currentCsvUrl) loadSheetData(currentCsvUrl);
-        }, 15 * 60 * 1000);
+                if (selectedNamesSet.size === 0) {
+                    filteredRows = [...allRows];
+                } else {
+                    filteredRows = allRows.filter(row => {
+                        return nameColumns.some(col => {
+                            const cellVal = (row[col] || '').toString().trim();
+                            return selectedNamesSet.has(cellVal);
+                        });
+                    });
+                }
+                renderTable();
+                updateResultCount();
+            }
 
-        initMonthSelector();
-    })();
-</script>
-</body>
-</html>
+            function renderTable() {
+                if (!headers.length) {
+                    tbody.innerHTML = `<tr><td colspan="10" class="empty-message">⚠️ No data — check sheet</td></tr>`;
+                    return;
+                }
+                theadRow.innerHTML = headers.map(h => `<th>${escapeHtml(h)}</th>`).join('');
+                if (filteredRows.length === 0) {
+                    tbody.innerHTML =
+                        `<tr><td colspan="${headers.length}" class="empty-message">✨ No matching shifts for selected members. Try other names or clear filter.</td></tr>`;
+                    return;
+                }
+                let html = '';
+                filteredRows.forEach(row => {
+                    html += '<tr>';
+                    headers.forEach(header => {
+                        let val = row[header] !== undefined ? row[header] : '';
+                        html += `<td>${escapeHtml(val.toString())}</td>`;
+                    });
+                    html += '</tr>';
+                });
+                tbody.innerHTML = html;
+            }
+
+            function updateResultCount() {
+                const total = allRows.length;
+                const shown = filteredRows.length;
+                const selectedCount = selectedNamesSet.size;
+                if (selectedCount === 0) lastUpdatedSpan.textContent = `👥 All members · ${total} shifts`;
+                else lastUpdatedSpan.textContent = `🔍 ${shown} of ${total} shifts (${selectedCount} member${selectedCount > 1 ? 's' : ''} selected)`;
+            }
+
+            function resetAllFilters() {
+                selectedNamesSet.clear();
+                updatePreviewText();
+                renderChecklist();
+                applyFilter();
+            }
+
+            // Load CSV and init data
+            async function loadSheetData(url) {
+                try {
+                    tbody.innerHTML = `<tr><td colspan="10" class="empty-message">⏳ Fetching schedule...</td></tr>`;
+                    lastUpdatedSpan.textContent = '⟳ Updating...';
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const csvText = await response.text();
+                    Papa.parse(csvText, {
+                        header: true,
+                        skipEmptyLines: true,
+                        complete: (results) => {
+                            headers = results.meta.fields || [];
+                            let rawRows = results.data.filter(row =>
+                                Object.values(row).some(v => v !== null && v !== undefined && v.toString().trim
