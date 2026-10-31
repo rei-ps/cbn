@@ -649,6 +649,7 @@
                     overlay.classList.add('hidden');
                     passwordError.textContent = '';
                     passwordInput.value = '';
+                    // Focus the first interactive element behind overlay (optional)
                 } else {
                     passwordError.textContent = '❌ Incorrect password. Try again.';
                     passwordInput.value = '';
@@ -674,7 +675,7 @@
             }
 
             // ============================================================
-            //  EXISTING APP LOGIC
+            //  EXISTING APP LOGIC (unchanged, but wrapped in the same IIFE)
             // ============================================================
 
             // ---------- CONFIGURATION ----------
@@ -712,6 +713,7 @@
             let nameColumns = [];
             let uniqueNames = [];
             let selectedNamesSet = new Set();
+            let currentMonthData = { rows: [], headers: [] };
 
             // Helper: escapeHtml
             function escapeHtml(str) {
@@ -874,5 +876,4 @@
                         skipEmptyLines: true,
                         complete: (results) => {
                             headers = results.meta.fields || [];
-                            let rawRows = results.data.filter(row =>
-                                Object.values(row).some(v => v !== null && v !== undefined && v.toString().trim
+                            let rawRows = results.data.filter
